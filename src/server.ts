@@ -1,6 +1,8 @@
-import express from "express";
+import express, { Request, Response } from "express";
+import * as core from "express-serve-static-core";
 import {z} from "zod";
 import { getProducts } from "./router";
+import DatabaseUsers from "./DatabaseUsers";
 
 let app = express();
 
@@ -20,7 +22,7 @@ app.get("/products", async (req, res) => {
 
 app.get("/products", getProducts);
 
-app.get("/", async (req, res) => {
+app.get("/", async (req:Request, res:Response) => {
 
     if(req.body) {
         let formData = (req.body as SignUpFormData);
@@ -31,7 +33,7 @@ app.get("/", async (req, res) => {
     res.json({"test": "test"});
 });
 
-app.post("/", async (req, res) => {
+app.post("/", async (req:Request, res) => {
 
     req.body.firstName.toLowerCase()
 
@@ -314,3 +316,170 @@ let getUser = (idOrUsername:number|string|null) => {
 
     return idOrUsername;
 }
+
+
+type Location = {
+    x: number,
+    y: number
+}
+
+let myLocation:Location = {x: 23, y: 57};
+
+let stores:Location[] = [
+    {x: 1, y: 44},
+    {x: 56, y: 12},
+    {x: 78, y: 56}
+];
+
+let distance = <T extends Location>(location1:T, location2:T):number => {
+    return Math.sqrt(Math.pow(location1.x-location2.x, 2)+Math.pow(location1.y-location2.y, 2));
+}
+
+let charDistance = (char1:string, char2:string):number => {
+    return Math.abs(char1.toLowerCase().charCodeAt(0)-char2.toLowerCase().charCodeAt(0));
+}
+
+type DistanceResult<T = Location> = {
+    length: number,
+    result: T
+}
+
+let findClosestDefault = <T extends Location = Location>(currentLocation:T, locations:T[]):DistanceResult<T> => {
+    let bestLocation:T = locations[0];
+    let bestLength = distance(currentLocation, bestLocation);
+
+    for(let i = 1; i < locations.length; i++) { //MENOTE: first is set as default
+        if(bestLength > distance(currentLocation, locations[i])) {
+            bestLocation = locations[i];
+            bestLength = distance(currentLocation, locations[i]);
+        }
+    }
+
+    return {length: bestLength, result: bestLocation};
+}
+
+let findClosest = <T = Location>(currentLocation:T, locations:T[], calculateDistance:(location1:T, location2:T) => number):DistanceResult<T> => {
+    let bestLocation:T = locations[0];
+    let bestLength = calculateDistance(currentLocation, bestLocation);
+
+    for(let i = 1; i < locations.length; i++) { //MENOTE: first is set as default
+        if(bestLength > calculateDistance(currentLocation, locations[i])) {
+            bestLocation = locations[i];
+            bestLength = calculateDistance(currentLocation, locations[i]);
+        }
+    }
+
+    return {length: bestLength, result: bestLocation};
+}
+
+let closestLocation = findClosest(myLocation, stores, distance);
+closestLocation.length;
+closestLocation.result.x;
+
+let closetsChatacter = findClosest("F", ["S", "I", "D"], charDistance);
+closestLocation.length;
+closetsChatacter.result.toLowerCase()
+
+
+/*
+let findClosestCharacter = (currentLocation:string, locations:string[]):string => {
+    let bestLocation = locations[0];
+
+    for(let i = 1; i < locations.length; i++) { //MENOTE: first is set as default
+        if(locations[i] < bestLocation) {
+            bestLocation = locations[i];
+        }
+    }
+
+    return bestLocation;
+}
+    */
+
+
+
+
+
+type LinkedListNode<T extends Location, V = string> = {
+    next: LinkedListNode<T> | null,
+    data: {
+        key: V,
+        value: T
+    }
+}
+
+let node:LinkedListNode<Location> = {next: null, data: {"key": "store1", "value": {x: 0, y: 1}}}
+
+let node2:LinkedListNode<Location, number> = {next: null, data: {"key": 1, "value": {x: 0, y: 1}}}
+
+node.next?.next?.next?.next?.next?.data?.value.x
+
+type NamedLocations<T = Location> = {
+    [key:string]:T
+}
+
+let namedStores:NamedLocations = {
+    "location1": {x: 0, y: 1},
+    "location2": {x: 0, y: 1},
+    "location3": {x: 0, y: 1},
+    "location4": {x: 0, y: 1},
+}
+
+let capialCities:NamedLocations<string> = {
+    "sweden": "Stockholm",
+    "norway": "Oslo",
+}
+
+
+
+type DatabaseUser = {
+    id: number,
+    email: string
+}
+
+let users:DatabaseUser[] = [
+    {id: 1, email: "1@example.com"},
+    {id: 2, email: "2@example.com"}
+]
+
+function getDatabaseUser(id:number):DatabaseUser|null;
+function getDatabaseUser(email:string):DatabaseUser|null;
+function getDatabaseUser(key:string, token:string):DatabaseUser|null;
+
+function getDatabaseUser(idOrEmail:number|string, token?:string):DatabaseUser|null {
+
+    if(typeof idOrEmail === "string") {
+        if(token) {
+            //METODO: implemnet this
+        }
+        else {
+            for(let i = 0; i < users.length; i++) {
+                let currentUser = users[i];
+                if(currentUser.email === idOrEmail) {
+                    return currentUser;
+                }
+            }
+        }
+    }
+    else {
+        for(let i = 0; i < users.length; i++) {
+            let currentUser = users[i];
+            if(currentUser.id === idOrEmail) {
+                return currentUser;
+            }
+        }
+    }
+    
+    return null;
+} 
+
+getDatabaseUser(1)
+getDatabaseUser("email@example.com");
+
+DatabaseUsers.getUser(1);
+
+
+function getUser2(props:{id?: number, email?:string}) {
+
+}
+
+getUser2({email: "asdasd@example.com"})
